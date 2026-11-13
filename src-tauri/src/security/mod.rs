@@ -19,8 +19,10 @@ pub struct SecurityConfig {
 
 impl SecurityConfig {
     pub fn from_env() -> Result<Self> {
+        // No built-in prompt: SYSTEM_PROMPT must come from the environment
+        // (.env) so the real prompt stays out of the public repo.
         let system_prompt = std::env::var("SYSTEM_PROMPT")
-            .unwrap_or_else(|_| "***REMOVED***".to_string());
+            .unwrap_or_else(|_| "You are a helpful AI coding assistant.".to_string());
 
         let production_mode = std::env::var("PRODUCTION_MODE")
             .unwrap_or_else(|_| "false".to_string())
