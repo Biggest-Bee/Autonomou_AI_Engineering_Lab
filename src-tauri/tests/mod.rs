@@ -1,66 +1,22 @@
 // Integration tests for Autonomous AI Engineering Lab
-// Tests security, VAL, sandbox, and core functionality
+// Tests security config, rate limiting, VAL, sandbox, and core functionality
 
 #[cfg(test)]
 mod tests {
-    use autonomous_ai_engineering_lib::security::{SecurityConfig, SecurityFilter, RateLimiter, ViolationTracker};
+    use autonomous_ai_engineering_lib::security::{SecurityConfig, RateLimiter};
     use autonomous_ai_engineering_lib::security::rate_limiter::{AuthTier, RateLimitConfig, RequestType};
     use autonomous_ai_engineering_lib::val::{ValDriver, MicroVMConfig, NetworkInterface};
-    use autonomous_ai_engineering_lib::sandbox::{SandboxEngine, WindowsSandbox};
+    use autonomous_ai_engineering_lib::sandbox::WindowsSandbox;
     use autonomous_ai_engineering_lib::val::process_tracker::{ProcessTracker, ResourceLimits};
-
-    fn test_security_config() -> SecurityConfig {
-        SecurityConfig {
-            system_prompt_tag: "<AI_SYSTEM_BOUNDARY>".to_string(),
-            system_prompt: "<AI_SYSTEM_BOUNDARY> test <AI_SYSTEM_BOUNDARY>".to_string(),
-            security_string: "<SECURITY_BOUNDARY>".to_string(),
-            display_tag: "system".to_string(),
-            production_mode: false,
-            default_terminal: "powershell".to_string(),
-        }
-    }
 
     #[test]
     fn test_security_config_environment_loading() {
         // Test that security config loads from environment variables
         let config = SecurityConfig::from_env().unwrap();
 
-        // Verify default values are set
-        assert!(!config.system_prompt_tag.is_empty());
+        // Verify defaults are set
         assert!(!config.system_prompt.is_empty());
-        assert!(!config.security_string.is_empty());
-        assert!(!config.display_tag.is_empty());
-    }
-
-    #[test]
-    fn test_security_filter_system_prompt_removal() {
-        let config = test_security_config();
-        let filter = SecurityFilter::new(config.clone());
-
-        let test_content = format!("Some content {} Some more content", config.system_prompt_tag);
-        let filtered = filter.filter_user_message(&test_content).unwrap();
-
-        // Verify system prompt tag is removed
-        assert!(!filtered.contains(&config.system_prompt_tag));
-        assert!(filtered.contains("Some content"));
-    }
-
-    #[test]
-    fn test_security_filter_response_leakage_detection() {
-        let config = test_security_config();
-        let filter = SecurityFilter::new(config);
-
-        let test_response = "Normal response";
-        let result = filter.check_response_leakage(test_response).unwrap();
-
-        // Normal response should be safe
-        assert!(result.is_safe);
-
-        // Response leaking the system prompt tag should be flagged
-        let leaky = filter
-            .check_response_leakage("oops <AI_SYSTEM_BOUNDARY> leaked")
-            .unwrap();
-        assert!(!leaky.is_safe);
+        assert!(!config.default_terminal.is_empty());
     }
 
     #[tokio::test]
@@ -139,14 +95,5 @@ mod tests {
         // Test that sandbox engine trait is implemented
         let sandbox = WindowsSandbox::new("test-distro");
         assert!(sandbox.is_ok());
-    }
-
-    #[tokio::test]
-    async fn test_violation_tracker_initialization() {
-        let tracker = ViolationTracker::new();
-
-        // Test that tracker can report violation counts
-        let user_id = "test_user";
-        assert_eq!(tracker.get_violation_count(user_id).await.unwrap(), 0);
     }
 }

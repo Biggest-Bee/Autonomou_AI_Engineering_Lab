@@ -8,15 +8,13 @@ A comprehensive desktop application for autonomous AI code generation, refactori
 - **Frontend**: Tauri v2 + React with modern component architecture
 - **Backend**: Rust host engine with Virtualization Abstraction Layer (VAL)
 - **AI Daemon**: Python 3.12+ background service for AST parsing, embeddings, and ML inference
-- **Security**: Multi-layer system prompt protection with 3-strike violation tracking
+- **Security**: Rate limiting and environment-based configuration management
 - **Sandbox**: Native OS Hybrid Sandbox (NOSH) for isolated code execution
 
 ### Security System
-- **System Prompt Protection**: Environment-based tag system prevents prompt injection
 - **Rate Limiting**: GitHub API rate limiting with authentication tier support
-- **Violation Tracking**: 3-strike rule with Firestore backend for security violations
-- **Response Filtering**: Automatic detection and removal of system prompt leakage
 - **Structured Communication**: JSON-based role separation (system/user) for AI interactions
+- **Environment Config**: Secrets and settings loaded from environment variables, never hardcoded
 
 ### Production Mode
 - **File Explorer Coding**: In production mode, AI operates directly in file explorer
@@ -59,7 +57,7 @@ A comprehensive desktop application for autonomous AI code generation, refactori
 
 ### Environment Configuration
 See `.env.example` for all required environment variables including:
-- System prompt security configuration
+- System prompt configuration
 - API keys (GitHub, OpenAI, etc.)
 - Firebase configuration (admin only)
 - Sandbox and terminal settings
@@ -67,11 +65,8 @@ See `.env.example` for all required environment variables including:
 
 ## 🔒 Security Features
 
-### System Prompt Protection
-- **Tag-based Isolation**: System prompts are wrapped in security tags
-- **User Message Filtering**: Automatic removal of system prompt tags from user input
-- **Response Leakage Detection**: AI responses are scanned for system prompt exposure
-- **Structured Communication**: AI receives JSON-structured messages with role separation
+### Structured Communication
+- AI receives JSON-structured messages with role separation (system/user)
 
 ### Rate Limiting
 - **GitHub API**: Tiered rate limiting (unauthenticated: 10/min, authenticated: 30/min)
@@ -79,18 +74,10 @@ See `.env.example` for all required environment variables including:
 - **Secondary Limits**: Point-based system to prevent spam (900-2,000 points/min)
 - **Concurrency Control**: Maximum of 100 concurrent requests
 
-### Violation Tracking
-- **3-Strike Rule**: First violation = warning, second = 24h timeout, third = permanent ban
-- **Firestore Backend**: Admin-only access to violation records
-- **Secret Identifiers**: Hidden error identifiers for security tracking
-- **Auto-ban**: Automatic enforcement of timeout and permanent bans
-
 ### Environment Variables
-Critical security values are stored in environment variables:
-- `SYSTEM_PROMPT_TAG`: The tag used to identify system prompts
-- `SYSTEM_PROMPT`: The actual system prompt with security boundaries
-- `SECURITY_STRING`: String used to detect prompt injection attempts
-- `DISPLAY_TAG`: What users see instead of the actual tag
+Critical values are stored in environment variables:
+- `SYSTEM_PROMPT`: The system prompt sent to the AI
+- `PRODUCTION_MODE` / `DEFAULT_TERMINAL`: Production-mode settings
 - API keys and secrets (never exposed to AI or client-side code)
 
 ## 🧪 Testing
@@ -152,8 +139,6 @@ The Native OS Hybrid Sandbox (NOSH) provides:
 
 ### Security Layer
 - **Rate Limiter**: GitHub API and general request rate limiting
-- **Security Filter**: System prompt tag removal and leakage detection
-- **Violation Tracker**: 3-strike rule with Firestore backend
 - **Environment Manager**: Secure configuration management
 
 ## 📊 Pricing Tiers
@@ -220,11 +205,9 @@ cd frontend && npm run dev
 ## 📝 Recent Updates
 
 ### Security Enhancements ✅
-- ✅ Implemented system prompt protection with environment-based tags
 - ✅ Added GitHub API rate limiting with authentication tiers
-- ✅ Implemented 3-strike violation tracking with Firestore backend
-- ✅ Added response filtering for system prompt leakage detection
 - ✅ Implemented structured JSON format for AI role separation
+- ✅ Environment-based configuration management
 
 ### Production Mode ✅
 - ✅ Changed production mode to file explorer coding
@@ -284,10 +267,7 @@ cd frontend && npm run dev
 - Enhanced daemon IPC handlers
 
 ### Security Layer ✅
-- System prompt protection and filtering
 - GitHub API rate limiting
-- 3-strike violation tracking
-- Response leakage detection
 - Environment-based configuration
 
 ### Sandbox Architecture ✅

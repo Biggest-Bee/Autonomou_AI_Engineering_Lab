@@ -17,7 +17,7 @@ pub mod audit;
 pub mod i18n;
 
 use val::{ValDriver, NetworkStack, TerminalManager};
-use security::{SecurityConfig, SecurityFilter, RateLimiter, ViolationTracker, MessageContainer};
+use security::{SecurityConfig, RateLimiter, MessageContainer};
 use sandbox::SandboxEngine;
 use tokio::sync::Mutex;
 use tauri::{State, Manager};
@@ -54,9 +54,7 @@ struct AppState {
     terminal_manager: Mutex<Option<TerminalManager>>,
     python_daemon: Arc<Mutex<Option<PythonDaemon>>>,
     security_config: SecurityConfig,
-    security_filter: Arc<SecurityFilter>,
     rate_limiter: Arc<RateLimiter>,
-    violation_tracker: Arc<ViolationTracker>,
     sandbox_engine: Arc<Mutex<Option<Box<dyn SandboxEngine>>>>,
     firestore_client: Arc<Mutex<Option<firebase::firestore::FirestoreClient>>>,
     cas_storage: Arc<Mutex<Option<cas::ContentAddressableStorage>>>,
@@ -225,9 +223,7 @@ pub fn run() {
       
       // Initialize security components
       let security_config = SecurityConfig::from_env().expect("Failed to load security config");
-      let security_filter = Arc::new(SecurityFilter::new(security_config.clone()));
       let rate_limiter = Arc::new(RateLimiter::new());
-      let violation_tracker = Arc::new(ViolationTracker::new());
       
       // Initialize sandbox engine (deferred initialization)
       let sandbox_engine = sandbox::create_sandbox_engine().expect("Failed to create sandbox engine");
@@ -264,9 +260,7 @@ pub fn run() {
         terminal_manager: Mutex::new(Some(terminal_manager)),
         python_daemon: Arc::new(Mutex::new(None)), // Will be initialized later
         security_config,
-        security_filter,
         rate_limiter,
-        violation_tracker,
         sandbox_engine: Arc::new(Mutex::new(Some(sandbox_engine))),
         firestore_client,
         cas_storage,
@@ -298,7 +292,6 @@ pub fn run() {
       search_code,
       get_symbol_info,
       get_daemon_stats,
-      check_security,
       format_message,
       check_rate_limit,
       run_sandbox_command,
@@ -644,32 +637,6 @@ async fn get_daemon_stats(state: State<'_, AppState>) -> Result<String, String> 
     } else {
         Err("Python daemon not initialized. Call start_python_daemon first.".to_string())
     }
-}
-
-#[tauri::command]
-async fn check_security(user_content: String, user_id: String, state: State<'_, AppState>) -> Result<String, String> {
-    log::info!("Checking security for user: {}", user_id);
-    
-    // Check if user is allowed (not banned)
-    let violation_check = state.violation_tracker.check_user_allowed(&user_id).await
-        .map_err(|e| format!("Violation check failed: {}", e))?;
-    
-    if !violation_check.is_allowed {
-        return Ok(serde_json::json!({
-            "status": "blocked",
-            "error": violation_check.error_message,
-            "ban_duration": violation_check.ban_duration.map(|d| d.as_secs()).unwrap_or(0)
-        }).to_string());
-    }
-    
-    // Filter user message
-    let filtered_content = state.security_filter.filter_user_message(&user_content)
-        .map_err(|e| format!("Security filter failed: {}", e))?;
-    
-    Ok(serde_json::json!({
-        "status": "allowed",
-        "filtered_content": filtered_content
-    }).to_string())
 }
 
 #[tauri::command]
