@@ -12,10 +12,27 @@ This daemon handles:
 
 import asyncio
 import json
+import os
 import signal
 import sys
+from pathlib import Path
 from typing import Dict, Any
 import structlog
+
+# Load .env so CUSTOM_MODEL_PATH / MODEL_NAME / LORA_ADAPTER_PATH work
+# even when the daemon is run standalone (not via the Tauri app).
+try:
+    from dotenv import load_dotenv
+    # .env lives at the repo root, two levels up from python-daemon/
+    for candidate in (
+        Path(__file__).resolve().parent.parent / ".env",
+        Path.cwd() / ".env",
+    ):
+        if candidate.is_file():
+            load_dotenv(candidate)
+            break
+except ImportError:
+    pass  # python-dotenv optional; env vars may come from the parent process
 
 from ast_engine import ASTRepoMap
 from vector_store import VectorStore
