@@ -4,6 +4,7 @@ Handles machine learning inference for code understanding and generation
 """
 
 import asyncio
+import os
 from typing import Dict, List, Any, Optional
 import structlog
 
@@ -30,7 +31,16 @@ class MLInferenceEngine:
         self.model = None
         self.code_pipeline = None
         self.use_ml = False
-        self.model_name = "microsoft/CodeGPT-small-py"  # Lightweight code model
+        # Priority: CUSTOM_MODEL_PATH > MODEL_NAME > default bootstrap model.
+        # CUSTOM_MODEL_PATH may be a local directory (merged fine-tuned model)
+        # or a HuggingFace repo id.
+        self.model_name = (
+            os.environ.get("CUSTOM_MODEL_PATH")
+            or os.environ.get("MODEL_NAME")
+            or "microsoft/CodeGPT-small-py"
+        )
+        # Optional LoRA adapter directory produced by finetune/kaggle_finetune.py
+        self.lora_adapter_path = os.environ.get("LORA_ADAPTER_PATH")
 
     async def initialize(self):
         """Initialize ML models and pipelines"""
@@ -42,10 +52,26 @@ class MLInferenceEngine:
             return
 
         try:
-            # Load a lightweight code model
-            # Using CodeGPT for code understanding and generation
+            # Load the configured model (custom fine-tune, HF repo, or default)
             self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
             self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
+
+            # Optionally attach a LoRA adapter (requires `peft` installed)
+            if self.lora_adapter_path:
+                try:
+                    from peft import PeftModel
+                    self.model = PeftModel.from_pretrained(
+                        self.model, self.lora_adapter_path
+                    )
+                    log.info("lora_adapter_loaded", path=self.lora_adapter_path)
+                except ImportError:
+                    log.warning(
+                        "peft_not_installed",
+                        message="LORA_ADAPTER_PATH set but peft missing; "
+                                "adapter ignored. pip install peft",
+                    )
+                except Exception as e:
+                    log.warning("lora_adapter_load_failed", error=str(e))
 
             # Create code generation pipeline
             self.code_pipeline = pipeline(
@@ -74,9 +100,23 @@ class MLInferenceEngine:
 
         if self.use_ml and self.code_pipeline:
             try:
-                # Generate code using ML model
-                full_prompt = f"# {language}\n{prompt}"
-                result = self.code_pipeline(full_prompt, max_length=max_length, num_return_sequences=1)
+                # Generate code using ML model.
+                # Instruct/chat models get a chat-templated prompt; base
+                # models (e.g. CodeGPT-small-py) use the raw comment prefix.
+                if self.tokenizer and self.tokenizer.chat_template:
+                    messages = [{
+                        "role": "user",
+                        "content": f"Write {language} code for: {prompt}",
+                    }]
+                    full_prompt = self.tokenizer.apply_chat_template(
+                        messages, tokenize=False, add_generation_prompt=True
+                    )
+                else:
+                    full_prompt = f"# {language}\n{prompt}"
+
+                result = self.code_pipeline(
+                    full_prompt, max_length=max_length, num_return_sequences=1
+                )
 
                 generated_code = result[0]['generated_text']
                 # Remove the prompt from the result
@@ -242,6 +282,9 @@ class MLInferenceEngine:
         """Get information about the ML model"""
         return {
             'model_name': self.model_name if self.use_ml else 'mock',
+            'custom_model_path': self.model_name
+                if os.environ.get("CUSTOM_MODEL_PATH") else None,
+            'lora_adapter_path': self.lora_adapter_path,
             'ml_available': ML_AVAILABLE,
             'use_ml': self.use_ml,
             'status': 'loaded' if self.use_ml else 'mock'
