@@ -1,9 +1,9 @@
 // Firestore integration for data persistence
 // Server-side Firestore access with admin-only security
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::{info, warn};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -40,6 +40,11 @@ impl FirestoreClient {
             credentials,
             cache: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+
+    /// The Firebase project ID this client is bound to
+    pub fn project_id(&self) -> &str {
+        &self.project_id
     }
 
     pub async fn initialize(&self) -> Result<()> {
@@ -99,7 +104,7 @@ impl FirestoreClient {
 
         let timestamp = chrono::Utc::now().timestamp();
 
-        let mut document = FirestoreDocument {
+        let document = FirestoreDocument {
             id: document_id.to_string(),
             data: data.clone(),
             created_at: timestamp, // Would preserve original created_at in real implementation

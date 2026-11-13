@@ -4,7 +4,7 @@
 use anyhow::Result;
 use std::collections::HashMap;
 use std::process::{Child, Command};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use log::{info, warn};
@@ -88,6 +88,7 @@ impl TrackedProcess {
 pub struct ProcessTracker {
     processes: Arc<RwLock<HashMap<u32, TrackedProcess>>>,
     auto_cleanup: bool,
+    cleanup_task_started: std::sync::atomic::AtomicBool,
 }
 
 impl ProcessTracker {
@@ -97,7 +98,50 @@ impl ProcessTracker {
         Self {
             processes: Arc::new(RwLock::new(HashMap::new())),
             auto_cleanup: true,
+            cleanup_task_started: std::sync::atomic::AtomicBool::new(false),
         }
+    }
+
+    /// Spawn a background task that periodically removes dead processes.
+    /// Only runs when auto_cleanup is enabled and a tokio runtime is available.
+    fn ensure_cleanup_task(&self) {
+        if !self.auto_cleanup {
+            return;
+        }
+        if self.cleanup_task_started.swap(true, std::sync::atomic::Ordering::SeqCst) {
+            return;
+        }
+        let Ok(handle) = tokio::runtime::Handle::try_current() else {
+            // No runtime available; reset so a later call can retry
+            self.cleanup_task_started.store(false, std::sync::atomic::Ordering::SeqCst);
+            return;
+        };
+        let processes = self.processes.clone();
+        handle.spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(30));
+            loop {
+                interval.tick().await;
+                Self::sweep_dead_processes(&processes).await;
+            }
+        });
+    }
+
+    /// Remove tracked processes that have no live child handle.
+    async fn sweep_dead_processes(processes: &RwLock<HashMap<u32, TrackedProcess>>) -> usize {
+        let mut map = processes.write().await;
+        let dead_pids: Vec<u32> = map
+            .iter()
+            .filter(|(_, p)| p.child.is_none())
+            .map(|(pid, _)| *pid)
+            .collect();
+        let mut cleaned = 0;
+        for pid in dead_pids {
+            if map.remove(&pid).is_some() {
+                info!("Auto-cleanup removed dead process {}", pid);
+                cleaned += 1;
+            }
+        }
+        cleaned
     }
 
     pub async fn track_process(&self, child: Child, command: String, limits: ResourceLimits) -> Result<u32> {
@@ -111,6 +155,9 @@ impl ProcessTracker {
 
         processes.insert(pid, tracked_process);
         info!("Process {} now being tracked", pid);
+
+        drop(processes);
+        self.ensure_cleanup_task();
 
         Ok(pid)
     }
@@ -162,14 +209,7 @@ impl ProcessTracker {
     pub async fn get_process_status(&self, pid: u32) -> Result<ProcessState> {
         let processes = self.processes.read().await;
         if let Some(process) = processes.get(&pid) {
-            // Check if process is still alive
-            if let Some(ref child) = process.child {
-                // Child can't be mutably borrowed in read-only access
-                // We'll assume it's running if we have a child reference
-                Ok(process.state.clone())
-            } else {
-                return Ok(process.state.clone());
-            }
+            Ok(process.state.clone())
         } else {
             Err(anyhow::anyhow!("Process {} not found in tracker", pid))
         }
@@ -190,13 +230,8 @@ impl ProcessTracker {
                 uptime_seconds: uptime,
             });
 
-            // Basic limit checking
-            if let Some(ref usage) = process.resource_usage {
-                if usage.memory_mb > process.resource_limits.max_memory_mb as f64 {
-                    warn!("Process {} exceeded memory limit: {}MB > {}MB", 
-                        process.pid, usage.memory_mb, process.resource_limits.max_memory_mb);
-                }
-            }
+            // Enforce resource limits (CPU + memory)
+            self.check_resource_limits(process).await;
         }
 
         Ok(())
@@ -297,8 +332,17 @@ impl ResourceGovernor {
         }
     }
 
+    /// Check whether a PID is currently tracked by this governor's tracker
+    pub async fn is_tracking(&self, pid: u32) -> bool {
+        self.tracker.get_all_processes().await.contains(&pid)
+    }
+
     pub async fn set_cpu_limit(&self, pid: u32, cpu_percent: f32) -> Result<()> {
         info!("Setting CPU limit for process {}: {}%", pid, cpu_percent);
+
+        if !self.is_tracking(pid).await {
+            warn!("Process {} is not tracked; applying limit anyway", pid);
+        }
 
         match self.platform.as_str() {
             "linux" => self.set_linux_cpu_limit(pid, cpu_percent).await?,

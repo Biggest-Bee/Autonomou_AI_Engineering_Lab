@@ -1,9 +1,9 @@
 // Cloud GPU Training Pipeline Module
 // Handles cloud GPU training configuration and management
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -77,6 +77,11 @@ impl CloudTrainingManager {
         }
     }
 
+    /// The configured cloud provider name (e.g. "aws", "gcp", "azure")
+    pub fn cloud_provider(&self) -> &str {
+        &self.cloud_provider
+    }
+
     pub async fn initialize(&self) -> Result<()> {
         info!("Initializing Cloud Training Manager");
 
@@ -92,7 +97,7 @@ impl CloudTrainingManager {
         info!("Submitting training job: {}", config.model_name);
 
         let job_id = config.job_id.clone();
-        let timestamp = chrono::Utc::now().timestamp();
+        let _timestamp = chrono::Utc::now().timestamp();
 
         let job = TrainingJob {
             config: config.clone(),

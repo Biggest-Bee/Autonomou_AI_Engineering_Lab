@@ -1,9 +1,9 @@
 // Mock API Service Module
 // Implements mock API services for development and testing
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;

@@ -1,9 +1,9 @@
 // Project Sharing and Marketplace Module
 // Handles project sharing, publishing, and marketplace functionality
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::info;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;

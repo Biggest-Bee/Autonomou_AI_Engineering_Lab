@@ -17,7 +17,7 @@ pub mod audit;
 pub mod i18n;
 
 use val::{ValDriver, NetworkStack, TerminalManager};
-use security::{SecurityConfig, SecurityFilter, RateLimiter, ViolationTracker, MessageContainer, RequestType};
+use security::{SecurityConfig, SecurityFilter, RateLimiter, ViolationTracker, MessageContainer};
 use sandbox::SandboxEngine;
 use tokio::sync::Mutex;
 use tauri::{State, Manager};
@@ -52,7 +52,7 @@ struct AppState {
     val_driver: Mutex<Option<ValDriver>>,
     network_stack: Mutex<Option<NetworkStack>>,
     terminal_manager: Mutex<Option<TerminalManager>>,
-    python_daemon: Mutex<Option<PythonDaemon>>,
+    python_daemon: Arc<Mutex<Option<PythonDaemon>>>,
     security_config: SecurityConfig,
     security_filter: Arc<SecurityFilter>,
     rate_limiter: Arc<RateLimiter>,
@@ -172,12 +172,15 @@ impl PythonDaemon {
     }
 }
 
-// Drop implementation not available for async - manual shutdown required
-// impl Drop for PythonDaemon {
-//     fn drop(&mut self) {
-//         // Can't use async here, will need manual shutdown
-//     }
-// }
+// Drop kills the daemon child process so it doesn't leak when the app exits.
+// Uses the synchronous start_kill() since Drop can't be async.
+impl Drop for PythonDaemon {
+    fn drop(&mut self) {
+        if let Some(mut child) = self.child.take() {
+            let _ = child.start_kill();
+        }
+    }
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -259,7 +262,7 @@ pub fn run() {
         val_driver: Mutex::new(Some(val_driver)),
         network_stack: Mutex::new(Some(network_stack)),
         terminal_manager: Mutex::new(Some(terminal_manager)),
-        python_daemon: Mutex::new(None), // Will be initialized later
+        python_daemon: Arc::new(Mutex::new(None)), // Will be initialized later
         security_config,
         security_filter,
         rate_limiter,
@@ -370,6 +373,19 @@ pub fn run() {
       translate_string,
       set_locale
     ])
+    .on_window_event(|window, event| {
+      if let tauri::WindowEvent::CloseRequested { .. } = event {
+        // Gracefully shut down the Python daemon before the process exits.
+        // Drop on PythonDaemon is the backstop if this doesn't finish in time.
+        let daemon_mutex = window.state::<AppState>().python_daemon.clone();
+        tauri::async_runtime::spawn(async move {
+          let mut guard = daemon_mutex.lock().await;
+          if let Some(ref mut daemon) = *guard {
+            daemon.shutdown().await;
+          }
+        });
+      }
+    })
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }

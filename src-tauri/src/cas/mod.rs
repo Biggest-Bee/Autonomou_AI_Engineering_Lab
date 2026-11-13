@@ -1,11 +1,11 @@
 // Content-Addressable Storage (CAS) Module
 // Implements hash-based content storage and deduplication
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::info;
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use sha2::{Sha256, Digest};

@@ -4,11 +4,10 @@
 use anyhow::{Context, Result};
 use std::collections::HashMap;
 use std::process::{Command, Stdio, Child};
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_tungstenite::tungstenite::protocol::Message;
-use log::{info, error, warn, debug};
-use serde::{Deserialize, Serialize};
+use log::info;
 
 /// Terminal session with enhanced process tracking
 #[derive(Debug)]

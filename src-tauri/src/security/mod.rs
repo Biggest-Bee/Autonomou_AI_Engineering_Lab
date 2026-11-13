@@ -1,8 +1,6 @@
 // System Prompt Security Module
 // Handles security filtering, rate limiting, and violation tracking
 
-use std::sync::Arc;
-use tokio::sync::RwLock;
 use serde::{Deserialize, Serialize};
 use anyhow::Result;
 

@@ -1,9 +1,9 @@
 // Execution Graph Visualization Module
 // Implements DAG visualization for autonomous code execution
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::info;
 use std::collections::{HashMap, VecDeque};
 use std::sync::Arc;
 use tokio::sync::RwLock;

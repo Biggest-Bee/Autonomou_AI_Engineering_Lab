@@ -4,7 +4,6 @@
 use async_trait::async_trait;
 use std::process::Output;
 use anyhow::Result;
-use serde::{Serialize, Deserialize};
 
 pub mod wsl;
 pub mod macos;

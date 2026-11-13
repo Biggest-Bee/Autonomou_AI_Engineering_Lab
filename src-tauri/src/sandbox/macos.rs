@@ -23,7 +23,7 @@ impl SandboxEngine for MacVfkitSandbox {
     async fn init(&self) -> Result<(), String> {
         // Launch vfkit as a background daemon using Apple Virtualization.framework
         // Note: This requires vfkit binary to be bundled in resources
-        let status = Command::new("./resources/bin/vfkit")
+        let _status = Command::new("./resources/bin/vfkit")
             .args([
                 "--cpus", "2",
                 "--memory", "2048",

@@ -2,7 +2,6 @@
 // Implements GitHub API rate limiting with authentication tiers
 
 use std::sync::Arc;
-use std::collections::HashMap;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use anyhow::Result;
@@ -113,8 +112,6 @@ impl RateLimiter {
 
     /// Check if a request can be made under rate limits
     pub async fn check_rate_limit(&self, request_type: RequestType) -> Result<RateLimitResult> {
-        let now = Instant::now();
-
         match request_type {
             RequestType::Search => {
                 self.cleanup_old_requests(&self.search_requests, Duration::from_secs(60)).await;

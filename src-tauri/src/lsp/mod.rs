@@ -3,11 +3,11 @@
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
-use log::{info, error, warn};
+use log::{info, warn};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tokio::process::{Command, Child, ChildStdin, ChildStdout};
+use tokio::process::{Child, ChildStdin, ChildStdout};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 
 /// LSP client configuration
