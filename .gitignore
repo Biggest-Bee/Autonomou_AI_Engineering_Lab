@@ -39,3 +39,6 @@ logs/
 
 # Tauri
 src-tauri/gen/
+
+# Personal notes (not for public repo)
+USER_TODO.md
