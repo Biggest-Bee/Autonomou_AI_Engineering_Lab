@@ -1,0 +1,207 @@
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #3d3d3d;
+}
+
+.app-icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+}
+
+.dashboard-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  flex-grow: 1;
+}
+
+.system-info {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background-color: #252525;
+  border-right: 1px solid #3d3d3d;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.account-section,
+.mode-switch,
+.mode-tabs,
+.training-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sidebar button {
+  padding: 0.5rem;
+  background-color: #3d3d3d;
+  border: none;
+  color: #e0e0e0;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.sidebar button:hover {
+  background-color: #4d4d4d;
+}
+
+.sidebar button.active {
+  background-color: #007acc;
+}
+
+.workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.ide-section {
+  flex: 1;
+  border-right: 1px solid #3d3d3d;
+}
+
+.chat-section {
+  width: 400px;
+  padding: 1rem;
+  background-color: #202020;
+  border-left: 1px solid #3d3d3d;
+}
+
+.ask-mode,
+.code-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ask-mode textarea,
+.code-mode textarea {
+  width: 100%;
+  height: 200px;
+  background-color: #1a1a1a;
+  border: 1px solid #3d3d3d;
+  color: #e0e0e0;
+  padding: 0.5rem;
+  border-radius: 4px;
+  resize: vertical;
+}
+
+.right-panel {
+  width: 300px;
+  background-color: #252525;
+  border-left: 1px solid #3d3d3d;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow-y: auto;
+}
+
+.autonomy-score,
+.execution-graph,
+.terminal-panel {
+  background-color: #2d2d2d;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #4caf50;
+  text-align: center;
+  margin: 1rem 0;
+}
+
+.score-breakdown {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.graph-placeholder {
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1a1a1a;
+  border-radius: 4px;
+  color: #666;
+}
+
+.training-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 1rem;
+}
+
+.training-gate input {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #3d3d3d;
+  background-color: #1a1a1a;
+  color: #e0e0e0;
+}
+
+.training-view {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.training-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.metric-card {
+  background-color: #2d2d2d;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.metric-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #4caf50;
+  margin-top: 0.5rem;
+}
+
+.read-only-notice {
+  background-color: #ff9800;
+  color: #000;
+  padding: 1rem;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+}

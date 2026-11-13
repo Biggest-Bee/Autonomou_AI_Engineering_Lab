@@ -1,0 +1,32 @@
+{
+  "name": "autonomous-ai-engineering-frontend",
+  "version": "0.1.0",
+  "description": "Frontend for Autonomous AI Engineering Lab",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.1.0",
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-monaco-editor": "^0.59.0"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^14.3.1",
+    "@testing-library/user-event": "^14.6.10",
+    "@vitejs/plugin-react": "^4.0.0",
+    "concurrently": "^8.2.0",
+    "jsdom": "^23.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.0.0",
+    "vitest": "^1.6.1"
+  }
+}

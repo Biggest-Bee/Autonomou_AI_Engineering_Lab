@@ -1,0 +1,17 @@
+{
+  "name": "autonomous-ai-engineering-lab",
+  "version": "0.1.0",
+  "description": "Autonomous AI Engineering Lab - Root package for concurrent testing",
+  "scripts": {
+    "test": "concurrently \"npm run test:rust\" \"npm run test:python\" \"npm run test:frontend\"",
+    "test:rust": "cd src-tauri && cargo test",
+    "test:python": "cd python-daemon && python -m pytest -v",
+    "test:frontend": "cd frontend && node node_modules/vitest/vitest.mjs run",
+    "dev": "concurrently \"cd src-tauri && cargo tauri dev\" \"cd python-daemon && python main.py\" \"cd frontend && npm run dev\"",
+    "build": "powershell -ExecutionPolicy Bypass -File build.ps1",
+    "build:bat": "build.bat"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0"
+  }
+}
